@@ -20,9 +20,9 @@ query = import_query("frequencia_valor.sql")
 
 # %%
 df = pd.read_sql(query, engine)
-df.head()
 
 df = df[df['qtdePontosPos'] < 4000]
+df.head()
 # %%
 plt.plot(df['qtdeFrequencia'], df['qtdePontosPos'], 'o')
 plt.grid(True)
@@ -44,25 +44,32 @@ kmean = cluster.KMeans(n_clusters=5,
                        max_iter=1000)
 kmean.fit(X)
 
-df['cluster'] = kmean.labels_
+df['cluster_calc'] = kmean.labels_
 
-df
+df.head()
 # %%
-df.groupby(by='cluster')['IdCliente'].count()
+df.groupby(by='cluster_calc')['idCliente'].count()
 
 # %%
 import seaborn as sns
 sns.scatterplot(data=df,
                 x='qtdeFrequencia',
                 y='qtdePontosPos',
-                hue='cluster',
+                hue='cluster_calc',
                 palette='deep')
 
 plt.hlines(y=1500, xmin=0, xmax=25, colors='black', linestyles='dashed')
-plt.hlines(y=750, xmin=0, xmax=4, colors='black', linestyles='dashed')
+plt.hlines(y=750, xmin=0, xmax=25, colors='black', linestyles='dashed')
 plt.vlines(x=4, ymin=0, ymax=750, colors='black', linestyles='dashed')
-plt.vlines(x=10, ymin=0, ymax=1500, colors='black', linestyles='dashed')
-plt.vlines(x=15, ymin=1500, ymax=3000, colors='black', linestyles='dashed')
+plt.vlines(x=10, ymin=0, ymax=3000, colors='black', linestyles='dashed')
+
+plt.grid(True)
+# %%
+sns.scatterplot(data=df,
+                x='qtdeFrequencia',
+                y='qtdePontosPos',
+                hue='cluster',
+                palette='deep')
 
 plt.grid(True)
 # %%
