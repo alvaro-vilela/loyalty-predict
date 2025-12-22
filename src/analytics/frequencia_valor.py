@@ -72,4 +72,3 @@ sns.scatterplot(data=df,
                 palette='deep')
 
 plt.grid(True)
-# %%

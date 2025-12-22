@@ -13,6 +13,9 @@ WITH tb_transacao AS (
 tb_agg_transacao AS (
     SELECT 
         idCliente,
+
+        max(julianday(date('2025-10-01', '-1 day')) - julianday(DtCriacao)) AS idadeDias,
+
         count(DISTINCT dtDia) AS qtdeAtivacaoVida,
         count(DISTINCT CASE WHEN dtDia >= date('2025-10-01', '-7 day') THEN dtDia END) AS qtdeAtivacaoD7,
         count(DISTINCT CASE WHEN dtDia >= date('2025-10-01', '-14 day') THEN dtDia END) AS qtdeAtivacaoD14,
@@ -114,6 +117,31 @@ tb_intervalo_dias AS (
     GROUP BY IdCliente
 ),
 
+tb_share_produtos AS (
+
+    SELECT
+        t1.idCliente,
+        1. * COUNT(CASE WHEN DescNomeProduto = 'ChatMessage' THEN t1.IdTransacao END) / count(t1.IdTransacao) AS qtdeChatMessage,
+        1. * COUNT(CASE WHEN DescNomeProduto = 'Airflow Lover' THEN t1.IdTransacao END) / count(t1.IdTransacao) AS qtdeAirflowLover,
+        1. * COUNT(CASE WHEN DescNomeProduto = 'R Lover' THEN t1.IdTransacao END) / count(t1.IdTransacao) AS qtdeRLover,
+        1. * COUNT(CASE WHEN DescNomeProduto = 'Resgatar Ponei' THEN t1.IdTransacao END) / count(t1.IdTransacao) AS qtdeResgatarPonei,
+        1. * COUNT(CASE WHEN DescNomeProduto = 'Lista de presença' THEN t1.IdTransacao END) / count(t1.IdTransacao) AS qtdeListadepresença,
+        1. * COUNT(CASE WHEN DescNomeProduto = 'Presença Streak' THEN t1.IdTransacao END) / count(t1.IdTransacao) AS qtdePresençaStreak,
+        1. * COUNT(CASE WHEN DescNomeProduto = 'Troca de Pontos StreamElements' THEN t1.IdTransacao END) / count(t1.IdTransacao) AS qtdeStreamElements,
+        1. * COUNT(CASE WHEN DescNomeProduto = 'Reembolso: Troca de Pontos StreamElements' THEN t1.IdTransacao END) / count(t1.IdTransacao) AS qtdeReembolsoStreamElements,
+        1. * COUNT(CASE WHEN DescCategoriaProduto = 'rpg' THEN t1.IdTransacao END) / count(t1.IdTransacao) AS qtdeRPG,
+        1. * COUNT(CASE WHEN DescNomeProduto = 'churn_model' THEN t1.IdTransacao END) / count(t1.IdTransacao) AS qtdeChurnModel
+    FROM tb_transacao AS t1
+
+    LEFT JOIN transacao_produto AS t2
+    ON t1.IdTransacao = t2.IdTransacao
+
+    LEFT JOIN produtos AS t3
+    ON t2.IdProduto = t3.IdProduto
+
+    GROUP BY idCliente
+),
+
 tb_join AS (
     SELECT
         t1.*,
@@ -123,7 +151,17 @@ tb_join AS (
         t2.qtdeHorasD28,
         t2.qtdeHorasD56,
         t3.avgIntervaloDiasVida,
-        t3.avgIntervaloDiasD28
+        t3.avgIntervaloDiasD28,
+        t4.qtdeChatMessage,
+        t4.qtdeAirflowLover,
+        t4.qtdeRLover,
+        t4.qtdeResgatarPonei,
+        t4.qtdeListadepresença,
+        t4.qtdePresençaStreak,
+        t4.qtdeStreamElements,
+        t4.qtdeReembolsoStreamElements,
+        t4.qtdeRPG,
+        t4.qtdeChurnModel
 
     FROM tb_agg_calc t1
     LEFT JOIN tb_hora_cliente AS t2
@@ -131,24 +169,13 @@ tb_join AS (
 
     LEFT JOIN tb_intervalo_dias AS t3
     ON t1.idCliente = t3.idCliente
+
+    LEFT JOIN tb_share_produtos AS t4
+    ON t1.idCliente = t4.idCliente
 )
 
-SELECT
-    COUNT CASE WHEN DescNomeProduto = 'ChatMessage' THEN IdTransacao END) AS qtdeChatMessage,
-    COUNT CASE WHEN DescNomeProduto = 'Airflow Lover' THEN IdTransacao END) AS qtdeAirflowLover,
-    COUNT CASE WHEN DescNomeProduto = 'R Lover' THEN IdTransacao END) AS qtdeRLover,
-    COUNT CASE WHEN DescNomeProduto = 'Resgatar Ponei' THEN IdTransacao END) AS qtdeResgatarPonei,
-    COUNT CASE WHEN DescNomeProduto = 'Lista de presença' THEN IdTransacao END) AS qtdeListadepresença,
-    COUNT CASE WHEN DescNomeProduto = 'Presença Streak' THEN IdTransacao END) AS qtdePresençaStreak,
-    COUNT CASE WHEN DescNomeProduto = 'Troca de Pontos StreamElements' THEN IdTransacao END) AS qtdeStreamElements,
-    COUNT CASE WHEN DescNomeProduto = 'Reembolso: Troca de Pontos StreamElements' THEN IdTransacao END) AS qtdeReembolsoStreamElements
-    
-FROM tb_transacao AS t1
+SELECT 
+    date('2025-10-01', '-1 day') AS dtRef,
+    *
+FROM tb_join
 
-LEFT JOIN transacao_produto AS t2
-ON t1.IdTransacao = t2.IdTransacao
-
-LEFT JOIN produtos AS t3
-ON t2.IdProduto = t3.IdProduto
-
-GROUP BY idCliente
